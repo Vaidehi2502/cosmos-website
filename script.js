@@ -9,18 +9,32 @@
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ----------------------------------------------------------------------
-     1) STARFIELD CANVAS — stars + drifting dust + pointer parallax
+     1) MILKY WAY CANVAS — a warm nebula band + dense stars + parallax
+        (replaces the earlier blue/violet drifting dust). The nebula glow is
+        baked once to an offscreen canvas and blitted each frame; only the
+        stars twinkle, so it stays cheap on every page.
      ---------------------------------------------------------------------- */
-  (function starfield() {
+  (function milkyWay() {
     var canvas = document.getElementById("starfield");
     if (!canvas) return;
     var ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     var stars = [];
-    var dust = [];
     var w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
     var pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+    var neb = document.createElement("canvas");
+    var nctx = neb.getContext("2d");
+    var ANGLE = -0.42; // tilt of the galactic band (radians)
+
+    function band() {
+      return {
+        cx: w * 0.5, cy: h * 0.55,
+        dir: { x: Math.cos(ANGLE), y: Math.sin(ANGLE) },
+        nrm: { x: Math.sin(ANGLE), y: -Math.cos(ANGLE) },
+        half: Math.hypot(w, h) * 0.62
+      };
+    }
 
     function resize() {
       w = canvas.clientWidth;
@@ -28,34 +42,80 @@
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      neb.width = canvas.width;
+      neb.height = canvas.height;
+      nctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       build();
     }
 
+    function bakeNebula(b) {
+      nctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      nctx.clearRect(0, 0, w, h);
+      nctx.globalCompositeOperation = "lighter";
+      var clouds = Math.round(Math.hypot(w, h) / 10);
+      for (var i = 0; i < clouds; i++) {
+        var t = (i / clouds - 0.5) * 2;                 // -1..1 along the band
+        var along = t * b.half;
+        var off = (Math.random() - 0.5) * h * (0.16 + Math.random() * 0.2);
+        var x = b.cx + b.dir.x * along + b.nrm.x * off;
+        var y = b.cy + b.dir.y * along + b.nrm.y * off;
+        var coreNear = 1 - Math.min(1, Math.abs(t) / 0.75);
+        var rad = (46 + Math.random() * 150) * (0.55 + coreNear);
+        var a = (0.012 + Math.random() * 0.028) * (0.35 + coreNear);
+        var col = coreNear > 0.6
+          ? "246, 240, 228"
+          : (Math.random() > 0.5 ? "232, 206, 160" : "206, 150, 92");
+        var g = nctx.createRadialGradient(x, y, 0, x, y, rad);
+        g.addColorStop(0, "rgba(" + col + ", " + a.toFixed(3) + ")");
+        g.addColorStop(1, "rgba(" + col + ", 0)");
+        nctx.fillStyle = g;
+        nctx.beginPath();
+        nctx.arc(x, y, rad, 0, Math.PI * 2);
+        nctx.fill();
+      }
+      // Bright galactic core bulge.
+      var cg = nctx.createRadialGradient(b.cx, b.cy, 0, b.cx, b.cy, h * 0.36);
+      cg.addColorStop(0, "rgba(255, 248, 232, 0.10)");
+      cg.addColorStop(1, "rgba(255, 248, 232, 0)");
+      nctx.fillStyle = cg;
+      nctx.beginPath();
+      nctx.arc(b.cx, b.cy, h * 0.36, 0, Math.PI * 2);
+      nctx.fill();
+      nctx.globalCompositeOperation = "source-over";
+    }
+
     function build() {
-      var starCount = Math.round((w * h) / 4800);
-      var dustCount = Math.round((w * h) / 26000);
+      var b = band();
+      bakeNebula(b);
+
       stars = [];
-      dust = [];
-      var i;
-      for (i = 0; i < starCount; i++) {
+      var count = Math.round((w * h) / 1700);
+      for (var i = 0; i < count; i++) {
+        var inBand = Math.random() < 0.62;
+        var x, y;
+        if (inBand) {
+          var along = (Math.random() - 0.5) * 2 * b.half;
+          var gg = (Math.random() + Math.random() + Math.random() - 1.5); // ~gaussian
+          var off = gg * h * 0.13;
+          x = b.cx + b.dir.x * along + b.nrm.x * off;
+          y = b.cy + b.dir.y * along + b.nrm.y * off;
+        } else {
+          x = Math.random() * w;
+          y = Math.random() * h;
+        }
+        var roll = Math.random();
+        var color = roll < 0.72 ? "248, 250, 252"
+          : roll < 0.86 ? "255, 228, 182"
+            : roll < 0.95 ? "255, 198, 146"
+              : "192, 214, 255";
         stars.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: Math.random() * 1.3 + 0.2,
+          x: x, y: y,
+          r: Math.random() * 1.15 + 0.25 + (inBand ? 0.15 : 0),
           depth: Math.random() * 0.8 + 0.2,
           tw: Math.random() * Math.PI * 2,
-          tws: Math.random() * 0.02 + 0.004
-        });
-      }
-      for (i = 0; i < dustCount; i++) {
-        dust.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: Math.random() * 2.2 + 0.8,
-          depth: Math.random() * 1.2 + 0.6,
-          vx: (Math.random() - 0.5) * 0.12,
-          vy: (Math.random() - 0.5) * 0.12,
-          hue: Math.random() > 0.5 ? "56, 189, 248" : "129, 140, 248"
+          tws: Math.random() * 0.02 + 0.004,
+          base: inBand ? 0.62 : 0.5,
+          color: color
         });
       }
     }
@@ -65,33 +125,21 @@
       pointer.y += (pointer.ty - pointer.y) * 0.06;
       ctx.clearRect(0, 0, w, h);
 
-      var i, s, px, py;
-      for (i = 0; i < stars.length; i++) {
-        s = stars[i];
+      // Nebula band with a little parallax drift (drawn slightly oversized so
+      // the parallax offset never reveals a hard edge).
+      var ox = pointer.x * 9, oy = pointer.y * 9;
+      ctx.drawImage(neb, ox - 12, oy - 12, w + 24, h + 24);
+
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
         s.tw += s.tws;
-        var alpha = 0.55 + Math.sin(s.tw) * 0.35;
-        px = s.x + pointer.x * s.depth * 14;
-        py = s.y + pointer.y * s.depth * 14;
+        var alpha = s.base + Math.sin(s.tw) * 0.35;
+        if (alpha < 0) alpha = 0;
+        var px = s.x + pointer.x * s.depth * 14;
+        var py = s.y + pointer.y * s.depth * 14;
         ctx.beginPath();
         ctx.arc(px, py, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(248, 250, 252, " + alpha.toFixed(3) + ")";
-        ctx.fill();
-      }
-
-      for (i = 0; i < dust.length; i++) {
-        var d = dust[i];
-        d.x += d.vx;
-        d.y += d.vy;
-        if (d.x < -10) d.x = w + 10; else if (d.x > w + 10) d.x = -10;
-        if (d.y < -10) d.y = h + 10; else if (d.y > h + 10) d.y = -10;
-        px = d.x + pointer.x * d.depth * 34;
-        py = d.y + pointer.y * d.depth * 34;
-        var grad = ctx.createRadialGradient(px, py, 0, px, py, d.r * 3);
-        grad.addColorStop(0, "rgba(" + d.hue + ", 0.5)");
-        grad.addColorStop(1, "rgba(" + d.hue + ", 0)");
-        ctx.beginPath();
-        ctx.arc(px, py, d.r * 3, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
+        ctx.fillStyle = "rgba(" + s.color + ", " + alpha.toFixed(3) + ")";
         ctx.fill();
       }
 

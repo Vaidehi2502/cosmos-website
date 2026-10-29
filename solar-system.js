@@ -510,6 +510,269 @@ function initCelestialCards() {
   });
 }
 
+/* ---------- Milky Way galaxy backdrop ----------------------------------
+   A vanilla port of a GPGPU spiral-galaxy effect: two THREE.Points layers
+   (sharp stars + soft nebula "smoke") with a procedural spiral distribution
+   and a core→gold→orange colour gradient. Differential orbital rotation is
+   done statelessly in the vertex shader (angle = omega * time), so there is
+   no ping-pong render target — cheaper and widely compatible. Sits far behind
+   the solar system as a tilted backdrop. */
+
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const GALAXY_STAR_VERT = /* glsl */ `
+precision highp float;
+uniform float uTime, uSpeed, uPixelRatio, uParticleSize;
+attribute float aRadiusFrac, aSeed, aColor, aOrb, aPhase;
+varying float vRadiusFrac, vPhase, vSeed, vColor;
+void main(){
+  vec3 p = position;
+  float r = length(p.xy) + 0.0001;
+  float omega = aOrb / (r + 0.28);
+  float ang = omega * uTime * uSpeed;
+  float c = cos(ang), s = sin(ang);
+  vec3 rp = vec3(p.x * c - p.y * s, p.x * s + p.y * c, p.z);
+  vRadiusFrac = aRadiusFrac; vSeed = aSeed; vColor = aColor;
+  vPhase = fract(aPhase + uTime * 0.03);
+  vec4 mvPos = modelViewMatrix * vec4(rp, 1.0);
+  float depth = -mvPos.z;
+  float isSpecial = step(0.990, aColor);
+  float sizeFactor = pow(1.0 - aRadiusFrac, 1.3);
+  float normalSz = mix(0.5, 8.0, sizeFactor) * (0.7 + aSeed * 0.5);
+  float specialSz = mix(7.2, 12.0, aSeed);
+  float sz = mix(normalSz, specialSz, isSpecial) * uParticleSize;
+  sz *= (420.0 / max(depth, 0.1)) * uPixelRatio;
+  float maxSize = mix(8.0 * (2.0 + aSeed), 12.0 * (2.0 + aSeed), isSpecial) * uParticleSize;
+  gl_PointSize = clamp(sz, 0.4, maxSize);
+  gl_Position = projectionMatrix * mvPos;
+}
+`;
+
+const GALAXY_STAR_FRAG = /* glsl */ `
+precision highp float;
+varying float vRadiusFrac, vPhase, vSeed, vColor;
+uniform vec3 uCoreColor, uAccentColor, uOuterColor;
+void main(){
+  vec2 uv = gl_PointCoord - 0.5;
+  float r = length(uv) * 2.0;
+  if(r > 1.0) discard;
+  float cp = exp(-r * r * 14.0);
+  float halo = exp(-r * r * 3.0) * 0.30;
+  float disc = clamp(cp + halo, 0.0, 1.0);
+  float dispersion = pow(1.0 - vRadiusFrac, 1.05);
+  float coreBulge = smoothstep(0.22, 0.0, vRadiusFrac) * 0.55;
+  float intensity = clamp(dispersion + coreBulge, 0.0, 1.0);
+  float tRate = 2.5 + vSeed * 4.5;
+  float twinkle = 0.78 + 0.22 * sin(vPhase * 6.28318 * tRate + vSeed * 17.3);
+  intensity *= twinkle;
+  float isSpecial = step(0.990, vColor);
+  vec3 nCore = uCoreColor * 1.15;
+  vec3 nMid = mix(uCoreColor, uAccentColor, 0.7);
+  vec3 nOuter = uOuterColor * 0.9;
+  vec3 normalCol = mix(nCore, nMid, smoothstep(0.0, 0.42, vRadiusFrac));
+  normalCol = mix(normalCol, nOuter, smoothstep(0.42, 1.0, vRadiusFrac));
+  float ss = fract((vColor - 0.990) / 0.010 * 5.0) * 5.0;
+  vec3 s0 = uAccentColor * 1.1;
+  vec3 s1 = mix(uAccentColor, uCoreColor, 0.35) * 1.1;
+  vec3 s2 = mix(uOuterColor, uCoreColor, 0.2) * 1.1;
+  vec3 s3 = uOuterColor * 1.1;
+  vec3 s4 = mix(uAccentColor, uOuterColor, 0.5) * 1.1;
+  vec3 specialCol;
+  if(ss < 1.0) specialCol = mix(s0, s1, ss);
+  else if(ss < 2.0) specialCol = mix(s1, s2, ss - 1.0);
+  else if(ss < 3.0) specialCol = mix(s2, s3, ss - 2.0);
+  else if(ss < 4.0) specialCol = mix(s3, s4, ss - 3.0);
+  else specialCol = mix(s4, s0, ss - 4.0);
+  intensity = mix(intensity, clamp(intensity * 2.5, 0.0, 1.0), isSpecial);
+  vec3 col = mix(normalCol, specialCol, isSpecial);
+  float alpha = disc * intensity * 0.90;
+  gl_FragColor = vec4(col * alpha, alpha);
+}
+`;
+
+const GALAXY_SMOKE_VERT = /* glsl */ `
+precision highp float;
+uniform float uTime, uSpeed, uPixelRatio, uParticleSize;
+attribute float aRadiusFrac, aSeed, aOrb, aPhase;
+varying float vRadiusFrac, vPhase, vSeed;
+void main(){
+  vec3 p = position;
+  float r = length(p.xy) + 0.0001;
+  float omega = aOrb / (r + 0.35);
+  float ang = omega * uTime * uSpeed;
+  float c = cos(ang), s = sin(ang);
+  vec3 rp = vec3(p.x * c - p.y * s, p.x * s + p.y * c, p.z);
+  vRadiusFrac = aRadiusFrac; vSeed = aSeed;
+  vPhase = fract(aPhase + uTime * 0.02);
+  vec4 mvPos = modelViewMatrix * vec4(rp, 1.0);
+  float depth = -mvPos.z;
+  float sizeFactor = mix(0.6, 1.0, 1.0 - aRadiusFrac);
+  float sz = 92.0 * uParticleSize * sizeFactor * (0.7 + aSeed * 0.6);
+  sz *= (420.0 / max(depth, 0.1)) * uPixelRatio;
+  gl_PointSize = clamp(sz, 2.0, 92.0 * uParticleSize * 3.0);
+  gl_Position = projectionMatrix * mvPos;
+}
+`;
+
+const GALAXY_SMOKE_FRAG = /* glsl */ `
+precision highp float;
+varying float vRadiusFrac, vPhase, vSeed;
+uniform vec3 uCoreColor, uAccentColor, uOuterColor;
+void main(){
+  vec2 uv = gl_PointCoord - 0.5;
+  uv.x *= 2.1; uv.y *= 0.72;
+  float r = length(uv) * 2.0;
+  if(r > 1.0) discard;
+  float core = exp(-dot(uv, uv) * 3.4);
+  float halo = exp(-dot(uv, uv) * 0.75) * 0.9;
+  float shape = clamp(core + halo, 0.0, 1.0);
+  float streak = 0.72 + 0.28 * smoothstep(0.42, 0.0, abs(uv.y));
+  float radialFade = pow(1.0 - vRadiusFrac, 0.72);
+  float coreBright = smoothstep(0.32, 0.0, vRadiusFrac) * 0.22;
+  float intensity = clamp(radialFade + coreBright, 0.0, 1.0);
+  float flow = 0.88 + 0.12 * sin(vPhase * 6.28318 + vSeed * 8.0);
+  intensity *= flow * streak;
+  vec3 cCore = uCoreColor * 1.25;
+  vec3 cCyan = uAccentColor * 1.05;
+  vec3 cMagenta = mix(uAccentColor, uOuterColor, 0.35) * 1.1;
+  vec3 cViolet = mix(uCoreColor, uAccentColor, 0.45) * 0.95;
+  vec3 cOuter = uOuterColor * 0.75;
+  float cn = fract(vSeed * 13.371 + vRadiusFrac * 2.71);
+  vec3 col = mix(cCore, cCyan, smoothstep(0.0, 0.28, vRadiusFrac));
+  col = mix(col, cMagenta, smoothstep(0.18, 0.52, vRadiusFrac + (cn - 0.5) * 0.18));
+  col = mix(col, cViolet, smoothstep(0.42, 0.78, vRadiusFrac + (cn - 0.5) * 0.22));
+  col = mix(col, cOuter, smoothstep(0.72, 1.0, vRadiusFrac));
+  float alpha = shape * intensity * 0.05;
+  gl_FragColor = vec4(col * alpha, alpha);
+}
+`;
+
+function buildGalaxyStarGeo(S, seed) {
+  const total = S * S;
+  const pos = new Float32Array(total * 3);
+  const rfrac = new Float32Array(total), seeds = new Float32Array(total);
+  const colors = new Float32Array(total), orb = new Float32Array(total), phase = new Float32Array(total);
+  const rand = mulberry32(seed);
+  const maxRadius = 3.5, holeRadius = 1.2, holeEdgeBand = 1.5, arms = 1,
+    spiralTightness = 10.75, armWidth = 0.38, diskHeight = 0.5, coreRadius = 0.22, coreHeight = 0.28;
+  for (let i = 0; i < total; i++) {
+    let r, inBulge = false;
+    if (rand() < 0.18) { r = Math.abs(rand() + rand() + rand() - 1.5) * coreRadius * 1.1; inBulge = true; }
+    else { r = -Math.log(1 - rand() * 0.9999) * (maxRadius * 0.35); r = Math.min(r, maxRadius); }
+    let inHoleEdge = false;
+    if (r < holeRadius) { r = holeRadius + rand() * holeEdgeBand; inBulge = false; inHoleEdge = true; }
+    const radiusFrac = Math.min(r / maxRadius, 1);
+    const armIdx = Math.floor(rand() * arms);
+    const armBase = (armIdx / arms) * Math.PI * 2;
+    let g = (rand() + rand() + rand()) / 3 - 0.5; g *= 2;
+    const scatter = armWidth * r * (inBulge ? 3 : 1);
+    const theta = inHoleEdge ? (rand() * Math.PI * 2 + g * (armWidth * holeRadius * 3))
+      : (armBase + r * spiralTightness + g * scatter);
+    let gz = (rand() + rand() + rand()) / 3 - 0.5; gz *= 2;
+    const z = gz * (inBulge ? coreHeight : diskHeight * (0.5 + radiusFrac * 0.5));
+    pos[i * 3] = r * Math.cos(theta); pos[i * 3 + 1] = r * Math.sin(theta); pos[i * 3 + 2] = z;
+    rfrac[i] = radiusFrac; seeds[i] = rand(); colors[i] = rand();
+    orb[i] = inBulge ? 0.55 + rand() * 0.15 : 0.30 + radiusFrac * 0.22 + rand() * 0.08;
+    phase[i] = rand();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("aRadiusFrac", new THREE.BufferAttribute(rfrac, 1));
+  geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+  geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 1));
+  geo.setAttribute("aOrb", new THREE.BufferAttribute(orb, 1));
+  geo.setAttribute("aPhase", new THREE.BufferAttribute(phase, 1));
+  return geo;
+}
+
+function buildGalaxySmokeGeo(S, seed) {
+  const total = S * S;
+  const pos = new Float32Array(total * 3);
+  const rfrac = new Float32Array(total), seeds = new Float32Array(total);
+  const orb = new Float32Array(total), phase = new Float32Array(total);
+  const rand = mulberry32(seed);
+  const maxRadius = 3.5, holeRadius = 1.2, holeEdgeBand = 1.5, arms = 2,
+    spiralTightness = 10.75, armWidth = 0.9, diskHeight = 0.18, orbSpeedBase = 0.2;
+  for (let i = 0; i < total; i++) {
+    let r = -Math.log(1 - rand() * 0.9999) * (maxRadius * 0.34); r = Math.min(r, maxRadius);
+    let inHoleEdge = false;
+    if (r < holeRadius) { r = holeRadius + rand() * holeEdgeBand; inHoleEdge = true; }
+    const radiusFrac = Math.min(r / maxRadius, 1);
+    const armIdx = Math.floor(rand() * arms);
+    const armBase = (armIdx / arms) * Math.PI * 2;
+    let g = (rand() + rand() + rand()) / 3 - 0.5; g *= 2;
+    const scatter = armWidth * r;
+    const theta = inHoleEdge ? (rand() * Math.PI * 2 + g * (armWidth * holeRadius * 2))
+      : (armBase + r * spiralTightness + g * scatter);
+    let gz = (rand() + rand() + rand()) / 3 - 0.5; gz *= 2;
+    const z = gz * diskHeight * (0.6 + radiusFrac * 0.4);
+    pos[i * 3] = r * Math.cos(theta); pos[i * 3 + 1] = r * Math.sin(theta); pos[i * 3 + 2] = z;
+    rfrac[i] = radiusFrac; seeds[i] = rand();
+    orb[i] = orbSpeedBase + radiusFrac * 0.08 + rand() * 0.04; phase[i] = rand();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("aRadiusFrac", new THREE.BufferAttribute(rfrac, 1));
+  geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
+  geo.setAttribute("aOrb", new THREE.BufferAttribute(orb, 1));
+  geo.setAttribute("aPhase", new THREE.BufferAttribute(phase, 1));
+  return geo;
+}
+
+function createGalaxy(isMobile) {
+  const pr = Math.min(window.devicePixelRatio || 1, 2);
+  const core = new THREE.Color("#f5f5ff");
+  const accent = new THREE.Color("#ffe6ad");
+  const outer = new THREE.Color("#e05c12");
+  const starMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uSpeed: { value: 0.25 }, uPixelRatio: { value: pr },
+      uParticleSize: { value: isMobile ? 1.5 : 1.9 },
+      uCoreColor: { value: core }, uAccentColor: { value: accent }, uOuterColor: { value: outer }
+    },
+    vertexShader: GALAXY_STAR_VERT, fragmentShader: GALAXY_STAR_FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const smokeMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 }, uSpeed: { value: 0.25 }, uPixelRatio: { value: pr },
+      uParticleSize: { value: isMobile ? 0.7 : 0.95 },
+      uCoreColor: { value: core }, uAccentColor: { value: accent }, uOuterColor: { value: outer }
+    },
+    vertexShader: GALAXY_SMOKE_VERT, fragmentShader: GALAXY_SMOKE_FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  });
+  const starGeo = buildGalaxyStarGeo(isMobile ? 170 : 300, 91);
+  const smokeGeo = buildGalaxySmokeGeo(isMobile ? 36 : 48, 7777);
+
+  const inner = new THREE.Group();
+  const d = THREE.MathUtils.degToRad;
+  inner.rotation.set(d(28), 0, d(-5)); // the galaxy's own disc tilt
+  inner.add(new THREE.Points(smokeGeo, smokeMat));
+  inner.add(new THREE.Points(starGeo, starMat));
+
+  const group = new THREE.Group();
+  group.add(inner);
+  group.position.set(-150, 95, -200);          // far behind, upper-left
+  group.scale.setScalar(isMobile ? 62 : 95);
+  group.rotation.set(d(52), d(-20), d(12));
+  group.renderOrder = -1;
+
+  return {
+    group,
+    update(elapsed) { starMat.uniforms.uTime.value = elapsed; smokeMat.uniforms.uTime.value = elapsed; },
+    dispose() { starGeo.dispose(); smokeGeo.dispose(); starMat.dispose(); smokeMat.dispose(); }
+  };
+}
+
 /* Ring texture: concentric translucent bands fading at the edges. */
 function ringTexture(strong) {
   const s = 256;
@@ -768,6 +1031,10 @@ function runScene(ui) {
     sizeAttenuation: true, blending: THREE.AdditiveBlending
   }));
   scene.add(stars);
+
+  /* ---- Milky Way galaxy backdrop ---- */
+  const galaxy = createGalaxy(isMobile);
+  scene.add(galaxy.group);
 
   /* ---- Labels (projected DOM) ---- */
   const labels = {};
@@ -1039,6 +1306,7 @@ function runScene(ui) {
       const pulse = 1 + Math.sin(clock.elapsedTime * 1.3) * 0.04;
       glow.scale.set(SUN.radius * 7 * pulse, SUN.radius * 7 * pulse, 1);
       stars.rotation.y += 0.004 * dt;
+      galaxy.update(clock.elapsedTime);
     }
 
     // Hover pick (overview only).
@@ -1109,6 +1377,7 @@ function runScene(ui) {
   window.addEventListener("pagehide", () => {
     cancelAnimationFrame(raf);
     running = false;
+    galaxy.dispose();
     renderer.dispose();
   }, { once: true });
 
