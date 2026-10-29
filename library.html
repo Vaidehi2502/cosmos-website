@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Infinite Cosmic Library: Astronomy Lessons Online</title>
+  <meta name="description" content="Search and filter the COSMOS library of astronomy lessons covering stars, the solar system, and extreme physics, each opening a detailed, cited study card.">
+  <meta name="author" content="COSMOS Learning Experience">
+  <link rel="canonical" href="https://cosmos.example.com/library.html">
+  <meta property="og:title" content="The Infinite Cosmic Library: Astronomy Lessons Online">
+  <meta property="og:description" content="Search and filter astronomy lessons on stars, the solar system, and extreme physics, each with detailed, cited study notes.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="COSMOS — The Infinite Universe Learning Experience">
+  <meta property="og:url" content="https://cosmos.example.com/library.html">
+  <meta property="og:image" content="https://cosmos.example.com/og-image.svg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <canvas id="starfield" role="img" aria-label="Animated star field with floating cosmic dust that shifts gently as the pointer moves"></canvas>
+
+  <header class="site-header">
+    <div class="wrap">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>COSMOS</a>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="library.html" aria-current="page">Cosmic Library</a></li>
+          <li><a href="lab.html">Physics Lab</a></li>
+          <li><a href="wonders.html">Cosmic Wonders</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section aria-labelledby="lib-heading">
+      <div class="wrap">
+        <span class="eyebrow">The Infinite Cosmic Library</span>
+        <h1 id="lib-heading">Lessons that stretch from stardust to black holes</h1>
+        <p class="lead">Type a keyword or choose a category to filter the collection instantly. Select any lesson to open its full study card with difficulty, key facts, and trusted citations.</p>
+
+        <div class="toolbar panel" style="margin-top:1.5rem">
+          <div class="search-field">
+            <label for="lesson-search">Search the library</label>
+            <input type="search" id="lesson-search" name="lesson-search" placeholder="e.g. black holes, nebula, gravity" autocomplete="off">
+          </div>
+          <div class="filters" role="group" aria-label="Filter lessons by category">
+            <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="chip" data-filter="origins" aria-pressed="false">Origins &amp; Stars</button>
+            <button type="button" class="chip" data-filter="solar" aria-pressed="false">Solar System</button>
+            <button type="button" class="chip" data-filter="extreme" aria-pressed="false">Extreme Physics</button>
+          </div>
+        </div>
+
+        <h2 id="origins" class="eyebrow" style="margin-top:2rem">Browse lessons</h2>
+        <div class="grid lesson-grid" id="lesson-grid" aria-live="polite">
+          <!-- Lesson cards are rendered by script.js -->
+        </div>
+        <p class="no-results" id="no-results" hidden>No lessons match your search yet. Try a different keyword or category.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Accessible lesson dialog -->
+  <dialog id="lesson-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-head">
+      <div>
+        <span class="diff" id="dialog-diff">Beginner</span>
+        <h2 id="dialog-title" style="margin:0.4rem 0 0">Lesson title</h2>
+      </div>
+      <button type="button" class="dialog-close" id="dialog-close" aria-label="Close lesson details">&times;</button>
+    </div>
+    <p id="dialog-body">Lesson body.</p>
+    <p id="dialog-related"></p>
+    <p class="citation" id="dialog-citation">Source.</p>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <h2>COSMOS</h2>
+          <p class="lead">The Infinite Universe Learning Experience — a free, open astronomy classroom for curious minds everywhere.</p>
+          <p class="tagline">There is always something more to discover.</p>
+        </div>
+        <nav aria-label="Explore">
+          <h2>Explore</h2>
+          <ul class="footer-links">
+            <li><a href="index.html">Celestial Observatory home</a></li>
+            <li><a href="library.html">Browse the Cosmic Library</a></li>
+            <li><a href="lab.html">Open the Physics Lab</a></li>
+            <li><a href="wonders.html">Discover Cosmic Wonders</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Trusted sources">
+          <h2>Sources</h2>
+          <ul class="footer-links">
+            <li><a href="https://science.nasa.gov/" rel="noopener">NASA Science portal</a></li>
+            <li><a href="https://www.esa.int/" rel="noopener">European Space Agency</a></li>
+            <li><a href="https://apod.nasa.gov/apod/" rel="noopener">NASA Picture of the Day</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 COSMOS Learning Experience. Educational content compiled from public NASA and ESA archives.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>

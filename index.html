@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COSMOS: Interactive Astronomy &amp; Universe Learning Hub</title>
+  <meta name="description" content="Begin your COSMOS journey with a live NASA picture of the day, an interactive starry parallax sky, and 3D celestial cards exploring the Sun, Earth, and Saturn.">
+  <meta name="author" content="COSMOS Learning Experience">
+  <link rel="canonical" href="https://cosmos.example.com/index.html">
+  <meta property="og:title" content="COSMOS: Interactive Astronomy &amp; Universe Learning Hub">
+  <meta property="og:description" content="A live NASA picture of the day, an interactive starry sky, and 3D celestial cards exploring the Sun, Earth, and Saturn.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="COSMOS — The Infinite Universe Learning Experience">
+  <meta property="og:url" content="https://cosmos.example.com/index.html">
+  <meta property="og:image" content="https://cosmos.example.com/og-image.svg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <canvas id="starfield" role="img" aria-label="Animated star field with floating cosmic dust that shifts gently as the pointer moves"></canvas>
+
+  <header class="site-header">
+    <div class="wrap">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>COSMOS</a>
+        <ul class="nav-links">
+          <li><a href="index.html" aria-current="page">Home</a></li>
+          <li><a href="library.html">Cosmic Library</a></li>
+          <li><a href="lab.html">Physics Lab</a></li>
+          <li><a href="wonders.html">Cosmic Wonders</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Cinematic 3D solar system hero (Celestial Observatory) -->
+    <section class="observatory" aria-labelledby="hero-heading">
+      <div class="observatory-stage" id="observatory-stage">
+        <!-- Decorative WebGL canvas. All meaningful text/controls live in the DOM overlay below. -->
+        <canvas id="solar-canvas" aria-hidden="true"></canvas>
+
+        <!-- Brief initialisation state -->
+        <div class="observatory-loading" id="observatory-loading" aria-hidden="true">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Calibrating the observatory…</p>
+        </div>
+
+        <!-- Projected planet labels (positioned by solar-system.js) -->
+        <div class="observatory-labels" id="observatory-labels" role="group" aria-label="Select a planet to explore"></div>
+
+        <!-- Overlay: hero copy + accessible planet selector -->
+        <div class="observatory-overlay">
+          <div class="observatory-intro" id="observatory-intro">
+            <span class="eyebrow">A journey through our cosmic neighbourhood</span>
+            <h1 id="hero-heading">Beyond the Known.</h1>
+            <p class="lead">Eight planets. One star. Countless worlds to discover.</p>
+            <p class="observatory-note">Distances and sizes are visually adjusted for a clear composition — the view is not to scale.</p>
+          </div>
+
+          <!-- Planet information panel (revealed after the camera arrives) -->
+          <aside class="planet-panel" id="planet-panel" aria-labelledby="panel-name" hidden>
+            <p class="planet-panel__class" data-field="class">Terrestrial planet</p>
+            <h2 class="planet-panel__name" id="panel-name" data-field="name">Planet</h2>
+            <p class="planet-panel__blurb" data-field="blurb">Description.</p>
+            <dl class="planet-facts">
+              <div><dt>Mean diameter</dt><dd data-field="diameter">—</dd></div>
+              <div><dt>Mean distance from the Sun</dt><dd data-field="distance">—</dd></div>
+              <div><dt>Length of day</dt><dd data-field="day">—</dd></div>
+              <div><dt>Orbital period</dt><dd data-field="year">—</dd></div>
+              <div><dt>Known moons</dt><dd data-field="moons">—</dd></div>
+            </dl>
+            <div class="planet-panel__actions">
+              <a class="btn btn-primary" data-field="lessons" href="library.html?cat=solar">Explore related lessons</a>
+              <button type="button" class="btn btn-ghost" data-action="return">Return to the solar system</button>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Non-WebGL / no-JS fallback: a static, accessible planet index -->
+        <div class="observatory-fallback" id="observatory-fallback" hidden>
+          <div class="wrap">
+            <p class="observatory-fallback__note">The interactive 3D view is unavailable here, so explore the planets below instead.</p>
+            <ul class="observatory-fallback__grid">
+              <li><strong>Mercury</strong> — the swift, cratered innermost rocky planet. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Venus</strong> — a rocky world under a crushing, super-heated atmosphere. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Earth</strong> — the blue ocean planet, the only known home of life. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Mars</strong> — the cold, rust-red desert world. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Jupiter</strong> — the banded gas giant and most massive planet. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Saturn</strong> — the ringed gas giant. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Uranus</strong> — the sideways-tilted ice giant. <a href="library.html?cat=solar">Lessons</a></li>
+              <li><strong>Neptune</strong> — the windy, deep-blue outermost ice giant. <a href="library.html?cat=solar">Lessons</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Status announcements for assistive technology -->
+        <p class="sr-only" id="observatory-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+    <noscript>
+      <style>
+        #observatory-loading, #observatory-labels, .observatory-picker, .observatory-hint { display: none !important; }
+        #observatory-fallback[hidden] { display: block !important; }
+      </style>
+    </noscript>
+
+    <!-- APOD daily discovery -->
+    <section aria-labelledby="apod-heading">
+      <div class="wrap">
+        <span class="eyebrow">Daily Discovery</span>
+        <h2 id="apod-heading">NASA Astronomy Picture of the Day</h2>
+        <p class="lead">A fresh window into deep space, refreshed every day straight from NASA's public archive.</p>
+        <article class="panel apod" id="apod-card" aria-live="polite">
+          <figure style="margin:0">
+            <img id="apod-image" src="og-image.svg" alt="NASA Astronomy Picture of the Day — a placeholder nebula illustration shown while the daily image loads">
+          </figure>
+          <div class="apod-meta">
+            <span class="badge" id="apod-date">Today</span>
+            <h3 id="apod-title">Loading today's cosmic view…</h3>
+            <p id="apod-explanation">We are fetching the latest Astronomy Picture of the Day from NASA. If the connection is offline or rate-limited, a curated highlight about our Milky Way will appear here instead.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Celestial tilt cards -->
+    <section aria-labelledby="worlds-heading">
+      <div class="wrap">
+        <span class="eyebrow">Featured Worlds</span>
+        <h2 id="worlds-heading">Interactive Celestial Cards</h2>
+        <p class="lead">Move your pointer across each card for a subtle 3D tilt, then follow the link to study that world in depth.</p>
+        <div class="grid grid-3 celestial-grid" style="margin-top:1.5rem">
+
+          <article class="panel celestial" data-tilt>
+            <div class="orb orb-sun" aria-hidden="true"></div>
+            <h3>The Sun</h3>
+            <p>A 4.6-billion-year-old G-type star holding 99.8% of the Solar System's mass and fusing 600 million tonnes of hydrogen every second.</p>
+            <p class="magic-fact"><strong>Magic fact:</strong> Light leaving the Sun's core can take 100,000 years to reach its surface.</p>
+            <a class="btn btn-ghost" href="library.html#origins">Study stars in the library</a>
+          </article>
+
+          <article class="panel celestial" data-tilt>
+            <div class="orb orb-earth" aria-hidden="true"></div>
+            <h3>Earth</h3>
+            <p>The only world known to host life, wrapped in a nitrogen-rich atmosphere and shielded by a powerful magnetic field.</p>
+            <p class="magic-fact"><strong>Magic fact:</strong> Earth travels around the Sun at roughly 107,000 kilometres per hour.</p>
+            <a class="btn btn-ghost" href="lab.html#scale">Compare Earth in the lab</a>
+          </article>
+
+          <article class="panel celestial" data-tilt>
+            <div class="orb orb-saturn" aria-hidden="true"></div>
+            <h3>Saturn</h3>
+            <p>A gas giant famous for its dazzling ring system of ice and rock, orbited by more than 140 confirmed moons.</p>
+            <p class="magic-fact"><strong>Magic fact:</strong> Saturn is so light it would float in a bathtub of water large enough to hold it.</p>
+            <a class="btn btn-ghost" href="wonders.html#weight">Weigh yourself on Saturn's worlds</a>
+          </article>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <h2>COSMOS</h2>
+          <p class="lead">The Infinite Universe Learning Experience — a free, open astronomy classroom for curious minds everywhere.</p>
+          <p class="tagline">There is always something more to discover.</p>
+        </div>
+        <nav aria-label="Explore">
+          <h2>Explore</h2>
+          <ul class="footer-links">
+            <li><a href="index.html">Celestial Observatory home</a></li>
+            <li><a href="library.html">Browse the Cosmic Library</a></li>
+            <li><a href="lab.html">Open the Physics Lab</a></li>
+            <li><a href="wonders.html">Discover Cosmic Wonders</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Trusted sources">
+          <h2>Sources</h2>
+          <ul class="footer-links">
+            <li><a href="https://science.nasa.gov/" rel="noopener">NASA Science portal</a></li>
+            <li><a href="https://www.esa.int/" rel="noopener">European Space Agency</a></li>
+            <li><a href="https://apod.nasa.gov/apod/" rel="noopener">NASA Picture of the Day</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 COSMOS Learning Experience. Educational content compiled from public NASA and ESA archives.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./script.js"></script>
+  <script type="module" src="./solar-system.js"></script>
+</body>
+</html>

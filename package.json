@@ -1,0 +1,18 @@
+{
+  "name": "cosmos-celestial-observatory",
+  "version": "1.0.0",
+  "description": "COSMOS — a cinematic, interactive 3D solar system observatory with astronomy learning tools.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.11"
+  }
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Wonders: Weight Calculator &amp; Space Quiz Facts</title>
+  <meta name="description" content="Calculate your weight across Mercury, the Moon, Mars, and Jupiter, take a fact-or-fiction space quiz, and explore the most extreme objects in physics.">
+  <meta name="author" content="COSMOS Learning Experience">
+  <link rel="canonical" href="https://cosmos.example.com/wonders.html">
+  <meta property="og:title" content="Cosmic Wonders: Weight Calculator &amp; Space Quiz Facts">
+  <meta property="og:description" content="Calculate your weight on other worlds, play a fact-or-fiction space quiz, and explore the most extreme objects in physics.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="COSMOS — The Infinite Universe Learning Experience">
+  <meta property="og:url" content="https://cosmos.example.com/wonders.html">
+  <meta property="og:image" content="https://cosmos.example.com/og-image.svg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <canvas id="starfield" role="img" aria-label="Animated star field with floating cosmic dust that shifts gently as the pointer moves"></canvas>
+
+  <header class="site-header">
+    <div class="wrap">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>COSMOS</a>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="library.html">Cosmic Library</a></li>
+          <li><a href="lab.html">Physics Lab</a></li>
+          <li><a href="wonders.html" aria-current="page">Cosmic Wonders</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section aria-labelledby="wonders-heading">
+      <div class="wrap">
+        <span class="eyebrow">Cosmic Wonders &amp; Daily Curiosities</span>
+        <h1 id="wonders-heading">The universe is stranger than you imagine</h1>
+        <p class="lead">Weigh yourself on alien worlds, challenge your instincts with a fact-or-fiction quiz, and peer into the physical extremes that stretch the laws of physics to their limits.</p>
+      </div>
+    </section>
+
+    <!-- Weight calculator -->
+    <section id="weight" aria-labelledby="weight-heading">
+      <div class="wrap">
+        <h2 id="weight-heading">Interplanetary weight calculator</h2>
+        <p class="lead">Your mass never changes, but your weight depends on local gravity. Enter your Earth weight to see how much you would weigh elsewhere.</p>
+
+        <form class="panel" style="margin-top:1.25rem" aria-label="Weight calculator">
+          <div class="search-field" style="max-width:320px">
+            <label for="earth-weight">Your weight on Earth (kilograms)</label>
+            <input type="number" id="earth-weight" name="earth-weight" min="1" max="500" step="0.5" value="70" inputmode="decimal">
+          </div>
+        </form>
+
+        <div class="grid weight-grid" id="weight-grid" aria-live="polite">
+          <!-- Weight cards rendered by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Fact or fiction quiz -->
+    <section aria-labelledby="quiz-heading">
+      <div class="wrap">
+        <h2 id="quiz-heading">Fact or fiction challenge</h2>
+        <p class="lead">Read each statement and decide whether it is scientific fact or fiction. You will get instant feedback explaining the real science.</p>
+
+        <div class="panel" style="margin-top:1.25rem">
+          <p class="quiz-score" id="quiz-score">Score: 0 correct of 0 answered.</p>
+          <h3 id="quiz-question" style="margin-top:0.5rem">Loading question…</h3>
+          <div class="quiz-options" id="quiz-options" role="group" aria-labelledby="quiz-question">
+            <!-- Option buttons rendered by script.js -->
+          </div>
+          <p class="quiz-feedback" id="quiz-feedback" aria-live="polite"></p>
+          <button type="button" class="btn btn-primary" id="quiz-next">Next statement</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Astrophysical extremes accordions -->
+    <section aria-labelledby="extremes-heading">
+      <div class="wrap">
+        <h2 id="extremes-heading">Astrophysical extremes</h2>
+        <p class="lead">Expand each panel to explore objects and phenomena that push matter, space, and time to their absolute edges.</p>
+
+        <div style="margin-top:1.25rem">
+          <details>
+            <summary>Neutron stars: a teaspoon that weighs a billion tonnes</summary>
+            <p>A neutron star packs more mass than the Sun into a sphere roughly 20 kilometres across. Its matter is so compressed that a single teaspoon would weigh around a billion tonnes on Earth, and its surface gravity is about 200 billion times stronger than ours.</p>
+          </details>
+          <details>
+            <summary>Cosmic voids: the vast emptiness between galaxies</summary>
+            <p>Cosmic voids are enormous regions — some over 300 million light-years wide — containing almost no galaxies. If the Milky Way sat at the centre of the Boötes Void, we might not have discovered other galaxies until the 1960s, because the nearest ones would be unimaginably far away.</p>
+          </details>
+          <details>
+            <summary>Photon latency: starlight is a message from the past</summary>
+            <p>Light travels at about 300,000 kilometres per second, yet space is so vast that the glow you see from distant stars left them long ago. Sunlight takes about 8 minutes and 20 seconds to reach Earth, so you always see the Sun as it was in the past, never as it is right now.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <h2>COSMOS</h2>
+          <p class="lead">The Infinite Universe Learning Experience — a free, open astronomy classroom for curious minds everywhere.</p>
+          <p class="tagline">There is always something more to discover.</p>
+        </div>
+        <nav aria-label="Explore">
+          <h2>Explore</h2>
+          <ul class="footer-links">
+            <li><a href="index.html">Celestial Observatory home</a></li>
+            <li><a href="library.html">Browse the Cosmic Library</a></li>
+            <li><a href="lab.html">Open the Physics Lab</a></li>
+            <li><a href="wonders.html">Discover Cosmic Wonders</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Trusted sources">
+          <h2>Sources</h2>
+          <ul class="footer-links">
+            <li><a href="https://science.nasa.gov/" rel="noopener">NASA Science portal</a></li>
+            <li><a href="https://www.esa.int/" rel="noopener">European Space Agency</a></li>
+            <li><a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/" rel="noopener">NASA planetary fact sheets</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 COSMOS Learning Experience. Educational content compiled from public NASA and ESA archives.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>

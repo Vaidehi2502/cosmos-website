@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosmic Physics Laboratory: Gravity &amp; Scale Simulators</title>
+  <meta name="description" content="Experiment with real astrophysics in the COSMOS lab: a live Newtonian gravity simulator and a side-by-side comparative scale table for any two planets.">
+  <meta name="author" content="COSMOS Learning Experience">
+  <link rel="canonical" href="https://cosmos.example.com/lab.html">
+  <meta property="og:title" content="Cosmic Physics Laboratory: Gravity &amp; Scale Simulators">
+  <meta property="og:description" content="A live Newtonian gravity simulator and a side-by-side comparative scale table for any two planets.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="COSMOS — The Infinite Universe Learning Experience">
+  <meta property="og:url" content="https://cosmos.example.com/lab.html">
+  <meta property="og:image" content="https://cosmos.example.com/og-image.svg">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <canvas id="starfield" role="img" aria-label="Animated star field with floating cosmic dust that shifts gently as the pointer moves"></canvas>
+
+  <header class="site-header">
+    <div class="wrap">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>COSMOS</a>
+        <ul class="nav-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="library.html">Cosmic Library</a></li>
+          <li><a href="lab.html" aria-current="page">Physics Lab</a></li>
+          <li><a href="wonders.html">Cosmic Wonders</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section aria-labelledby="lab-heading">
+      <div class="wrap">
+        <span class="eyebrow">The Cosmic Physics Laboratory</span>
+        <h1 id="lab-heading">Run the experiments that govern the universe</h1>
+        <p class="lead">Every number below is computed live from the real equations physicists use. Drag the sliders and change the planets to watch gravity and scale respond in real time.</p>
+      </div>
+    </section>
+
+    <!-- Experiment 1: Gravity simulator -->
+    <section aria-labelledby="gravity-heading">
+      <div class="wrap">
+        <h2 id="gravity-heading">Experiment 1 — Newtonian gravity simulator</h2>
+        <p class="lead">Newton's law of universal gravitation states that every mass attracts every other mass. Adjust the two masses and the distance between them to see the force change.</p>
+
+        <div class="grid lab-grid" style="margin-top:1.25rem">
+          <form class="panel" aria-label="Gravity simulator controls">
+            <div class="control">
+              <label for="mass1">Mass 1 — Earth-like body (×10²⁴ kg) <output id="mass1-out" for="mass1">5.97</output></label>
+              <input type="range" id="mass1" name="mass1" min="0.1" max="100" step="0.1" value="5.97">
+            </div>
+            <div class="control">
+              <label for="mass2">Mass 2 — Moon-like body (×10²² kg) <output id="mass2-out" for="mass2">7.35</output></label>
+              <input type="range" id="mass2" name="mass2" min="0.1" max="100" step="0.1" value="7.35">
+            </div>
+            <div class="control">
+              <label for="distance">Distance r between centres (×10⁶ km) <output id="distance-out" for="distance">0.384</output></label>
+              <input type="range" id="distance" name="distance" min="0.01" max="10" step="0.001" value="0.384">
+            </div>
+          </form>
+
+          <div class="panel readout" aria-live="polite">
+            <p>Gravitational force between the two bodies:</p>
+            <p class="big" id="force-out">0 N</p>
+            <p id="force-note" class="lead" style="margin-bottom:0">Using <strong>F = G · m₁ · m₂ / r²</strong> with G = 6.674 × 10⁻¹¹ N·m²/kg². The Earth–Moon default values yield roughly 1.98 × 10²⁰ newtons.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Experiment 2: Comparative scale table -->
+    <section id="scale" aria-labelledby="scale-heading">
+      <div class="wrap">
+        <h2 id="scale-heading">Experiment 2 — Comparative planetary scale</h2>
+        <p class="lead">Pick any two worlds to compare their real physical dimensions side by side, drawn from NASA planetary fact sheets.</p>
+
+        <div class="toolbar panel" style="margin-top:1.25rem">
+          <div class="search-field">
+            <label for="planet-a">First world</label>
+            <select id="planet-a" name="planet-a"></select>
+          </div>
+          <div class="search-field">
+            <label for="planet-b">Second world</label>
+            <select id="planet-b" name="planet-b"></select>
+          </div>
+        </div>
+
+        <table>
+          <caption>Comparative physical properties of the two selected worlds.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Property</th>
+              <th scope="col" id="col-a">World A</th>
+              <th scope="col" id="col-b">World B</th>
+            </tr>
+          </thead>
+          <tbody id="scale-body">
+            <!-- Rows rendered by script.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <h2>COSMOS</h2>
+          <p class="lead">The Infinite Universe Learning Experience — a free, open astronomy classroom for curious minds everywhere.</p>
+          <p class="tagline">There is always something more to discover.</p>
+        </div>
+        <nav aria-label="Explore">
+          <h2>Explore</h2>
+          <ul class="footer-links">
+            <li><a href="index.html">Celestial Observatory home</a></li>
+            <li><a href="library.html">Browse the Cosmic Library</a></li>
+            <li><a href="lab.html">Open the Physics Lab</a></li>
+            <li><a href="wonders.html">Discover Cosmic Wonders</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Trusted sources">
+          <h2>Sources</h2>
+          <ul class="footer-links">
+            <li><a href="https://science.nasa.gov/" rel="noopener">NASA Science portal</a></li>
+            <li><a href="https://www.esa.int/" rel="noopener">European Space Agency</a></li>
+            <li><a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/" rel="noopener">NASA planetary fact sheets</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 COSMOS Learning Experience. Educational content compiled from public NASA and ESA archives.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
